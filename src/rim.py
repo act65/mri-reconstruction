@@ -1,5 +1,5 @@
 import tensorflow as tf
-import utils
+import src.utils as utils
 
 """
 Implementation of Recurrent inference machines
