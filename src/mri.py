@@ -28,6 +28,7 @@ class MRI():
         """
         y = tf.fft2d(x)
 
+        # TODO not sure this works as intended
         # generate a random mask. aka the samples from y that we choose
         mask = tf.random_uniform(tf.shape(y), minval=0, maxval=self.n, dtype=tf.int32)
         mask = 1-tf.cast(tf.greater(mask, tf.ones_like(mask)), tf.float32)
@@ -55,5 +56,8 @@ class MRI():
                 shape is [None, width, height, channels],
                 dtype is tf.complex64
         """
+        # gets the mask used in the forward process.
+        # NOTE be careful here. will only return the correct mask if called
+        # after the corresponding forward process
         y_ = self.mask*tf.fft(x)
         return tf.ifft2d(y_-y)/(sigma**2)
