@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import src.utils as utils
 
 """
@@ -41,7 +42,7 @@ def compute_mmd(x, y):
     return tf.reduce_mean(x_kernel) + tf.reduce_mean(y_kernel) - 2 * tf.reduce_mean(xy_kernel)
 
 class InfoVAE():
-    def __init__(self, n_hidden, width, depth):
+    def __init__(self, n_hidden, width, depth, stddev=0.01):
         """
         Args:
 
@@ -50,7 +51,7 @@ class InfoVAE():
         self.width = width
         self.depth = depth
         self.n_channels = 1
-        self.stddev = 0.1
+        self.stddev = stddev
 
         self.construct()
 
@@ -61,21 +62,36 @@ class InfoVAE():
             encoder (tf.keras.Model): encode the gradient into the hidden space
             decoder (tf.keras.Model): decodes a hidden state into an image
         """
-        self.encoder = tf.keras.Sequential([
-            tf.keras.layers.Conv2D(self.width, 4, strides=(2, 2), padding='same', input_shape=(28,28,1)),
-            tf.keras.layers.Activation(tf.keras.activations.selu),
-            tf.keras.layers.Conv2D(self.width, 4, strides=(2, 2), padding='same'),
-            tf.keras.layers.Activation(tf.keras.activations.selu),
-            tf.keras.layers.Conv2D(self.n_hidden*2, 1, strides=(1, 1), padding='same'),
-        ])
+        layers = []
+        layers.append(tf.keras.layers.Conv2D(self.width, 4, strides=(2, 2),
+                                   padding='same',
+                                   # input_shape=(28,28,1)
+                                   ))
+        layers.append(tf.keras.layers.Activation(tf.keras.activations.selu))
+        for i in range(self.depth):
+            layers.append(tf.keras.layers.Conv2D(self.width,
+                                                 4,
+                                                 strides=(2, 2),
+                                                 padding='same'),)
+            layers.append(tf.keras.layers.Activation(tf.keras.activations.selu))
+        layers.append(tf.keras.layers.Conv2D(self.n_hidden*2,
+                                1,
+                                strides=(1, 1),
+                                padding='same'))
+        self.encoder = tf.keras.Sequential(layers)
 
-        self.decoder = tf.keras.Sequential([
-            tf.keras.layers.Conv2DTranspose(self.width, 4, strides=(2, 2), padding='same', input_shape=(7,7,self.n_hidden)),
-            tf.keras.layers.Activation(tf.keras.activations.selu),
-            tf.keras.layers.Conv2DTranspose(self.width, 4, strides=(2, 2), padding='same'),
-            tf.keras.layers.Activation(tf.keras.activations.selu),
-            tf.keras.layers.Conv2DTranspose(self.n_channels*2, 1, strides=(1, 1), padding='same'),
-        ])
+        # decoder
+        layers = []
+        layers.append(tf.keras.layers.Conv2DTranspose(self.width, 4, strides=(2, 2),
+                                            padding='same',
+                                            # input_shape=(1,1,self.n_hidden)
+                                            ))
+        layers.append(tf.keras.layers.Activation(tf.keras.activations.selu))
+        for _ in range(self.depth):
+            layers.append(tf.keras.layers.Conv2DTranspose(self.width, 4, strides=(2, 2), padding='same'))
+            layers.append(tf.keras.layers.Activation(tf.keras.activations.selu))
+        layers.append(tf.keras.layers.Conv2DTranspose(self.n_channels*2, 1, strides=(1, 1), padding='same'))
+        self.decoder = tf.keras.Sequential(layers)
 
     def __call__(self, x):
         """
@@ -103,7 +119,8 @@ class InfoVAE():
 
     @staticmethod
     def preprocess(x):
-        return x.reshape((-1, 28, 28, 1))
+        im = x.reshape((-1, 28, 28, 1))
+        return np.pad(im, [(0,0), (2,2), (2,2), (0,0)], 'constant', constant_values=0)
 
 if __name__ == '__main__':
     tf.enable_eager_execution()
