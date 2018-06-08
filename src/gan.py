@@ -67,12 +67,13 @@ class GAN():
         x_fake = self.generator(z)
         p_real = self.discriminator(x)
         p_fake = self.discriminator(x_fake)
-        return x_fake, p_real, p_fake
+        return x_fake, tf.layers.flatten(p_real), tf.layers.flatten(p_fake)
 
     def make_losses(self, x, x_fake=None, p_real=None, p_fake=None):
         if x_fake is None and p_real is None and p_fake is None:
             x_fake, p_real, p_fake = self.__call__(x)
 
+        # discriminator is trying to correctly guess fake/real labelss
         discrim_loss = tf.losses.sigmoid_cross_entropy(
             logits=p_real,
             multi_class_labels=tf.ones_like(p_real))
@@ -80,6 +81,7 @@ class GAN():
             logits=p_fake,
             multi_class_labels=tf.zeros_like(p_fake))
 
+        # generator is trying to fool the discriminator
         gen_loss = tf.losses.sigmoid_cross_entropy(
             logits=p_fake,
             multi_class_labels=tf.ones_like(p_real))
