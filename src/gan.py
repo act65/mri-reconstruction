@@ -16,7 +16,6 @@ class GAN():
 
         self.construct()
 
-
     def construct(self):
         """
         Constructs:
@@ -84,7 +83,7 @@ class GAN():
         # generator is trying to fool the discriminator
         gen_loss = tf.losses.sigmoid_cross_entropy(
             logits=p_fake,
-            multi_class_labels=tf.ones_like(p_real))
+            multi_class_labels=tf.ones_like(p_fake))
 
         return gen_loss, discrim_loss
 
