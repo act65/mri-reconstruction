@@ -23,7 +23,7 @@ def reparameterise(x, n, stddev):
 
 def compute_kernel(x, y):
     """
-    Compute the disctance between x and y using a guassian kernel.
+    Compute the distance between x and y using a guassian kernel.
     """
     x_size = tf.shape(x)[0]
     y_size = tf.shape(y)[0]
@@ -100,26 +100,29 @@ class InfoVAE():
                 shape is [None, width, height, channels],
                 dtype is tf.float32
         """
-        h = self.encoder(x)
-        self.z = reparameterise(h, self.n_hidden, self.stddev)
-        y = self.decoder(self.z)
-        return reparameterise(y, self.n_channels, self.stddev)
+        with tf.name_scope('infovae'):
+            self.h = self.encoder(x)
+            self.z = reparameterise(self.h, self.n_hidden, self.stddev)
+            self.y = self.decoder(self.z)
+            return reparameterise(self.y, self.n_channels, self.stddev)
 
     def make_losses(self, x, y=None):
         if y is None:
             y = self.__call__(x)
 
-        recon_loss = tf.losses.sigmoid_cross_entropy(
-            logits=tf.layers.flatten(y),
-            multi_class_labels=tf.layers.flatten(x))
-        latent_loss = compute_mmd(tf.layers.flatten(self.z),
-                              tf.layers.flatten(tf.random_normal(shape=tf.shape(self.z))))
+        with tf.name_scope('loss'):
+            recon_loss = tf.losses.sigmoid_cross_entropy(
+                logits=tf.layers.flatten(y),
+                multi_class_labels=tf.layers.flatten(x))
+            latent_loss = compute_mmd(tf.layers.flatten(self.z),
+                                  tf.layers.flatten(tf.random_normal(shape=tf.shape(self.z))))
 
         return recon_loss, latent_loss
 
     @staticmethod
     def preprocess(x):
         im = x.reshape((-1, 28, 28, 1))
+        im = np.round(im).astype(np.float32)  # NOTE important !?
         return np.pad(im, [(0,0), (2,2), (2,2), (0,0)], 'constant', constant_values=0)
 
 if __name__ == '__main__':
