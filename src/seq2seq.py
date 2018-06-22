@@ -8,7 +8,7 @@ https://openreview.net/forum?id=HkSOlP9lg
 # TODO what does the hidden space encode?
 # TODO vector field of direction of gradient
 
-class RIM(tf.keras.Model):
+class Seq2Seq(tf.keras.Model):
     def __init__(self, dLdx, units):
         """
         Args:
@@ -53,7 +53,7 @@ class RIM(tf.keras.Model):
             tf.keras.layers.GRUCell(self.units)
         ])
 
-    def call(self, y, iters=10):
+    def call(self, x, iters=10):
         """
         Args:
             y (tf.tensor): the k-space samples
@@ -62,12 +62,13 @@ class RIM(tf.keras.Model):
             iters (int): the number of recurrent iterations, aka the steps of
                 gradient descent on x
         """
-        # TODO how is this trained with big images!? not possible!?
-        # the recurrent dependencies will use up lots of memory!?!
+        # We are given samples of y from the forward function
+        # instead it is quicker to compute y once and sample
+        # rather than do the samping properly
+        y = mri(x)
 
-        x_t = tf.ifft2d(y)  # init x_0
+        self.candidate_xs = []
 
-        self.candidate_xs = [x_t]
 
         for i in range(iters):
             g = self.dLdx(y, x_t)
@@ -75,11 +76,15 @@ class RIM(tf.keras.Model):
             g_e = self.embed(g, self.cnn1)
             x_t_e = self.embed(x_t, self.cnn2)
 
-            # TODO not sure that the RNN is working as intended.
-            # TODO does g_e actually provide useful information!?
-            h = self.encoder(g_e, x_t_e)
-            x_t += self.decoder(g_e, x_t_e, h)
+            pos, state = self.sample_picker(state, g_e, x_t_e, samples, )
+            samples.append(pos)
 
+            # NOTE just use masks for now.
+            # sample needs to be differentiable
+            masks = [sample(y, s) for s in samples]
+            y_t = tf.add_n(masks)
+
+            x_t = self.decoder(y_t)
             self.candidate_xs.append(x_t)
 
         return x_t
@@ -97,20 +102,10 @@ class RIM(tf.keras.Model):
         y = self.rnn(x)
         return y
 
-    def decoder(self, g, x_t, h, agg='add'):
-        # TODO will need to experiment with these?
-        if agg == 'add':
-            x = g + x_t + h
-            x = tf.reshape(x, self.shape)
-        elif agg == 'concat':
-            g = tf.reshape(g, self.shape)
-            x_t = tf.reshape(x_t, self.shape)
-            h = tf.reshape(h, [h.shape[0], 1, 1, h.shape[1]])
-            x = tf.concat([g, x_t], axis=-1) + h
-
-        y = self.dcnn(x)
-        y = tf.cast(y, tf.complex64)
-        return y
+    def decoder(self, y):
+        # x = self.dcnn(y)
+        x = tf.ifft_2d(y)
+        return x
 
 
 if __name__ == '__main__':

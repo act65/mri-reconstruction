@@ -1,3 +1,4 @@
 jupyterlab
 tensorflow
 matplotlib
+nibabel

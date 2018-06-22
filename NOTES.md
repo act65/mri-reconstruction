@@ -2,7 +2,7 @@
 
 
 
-### Related work
+### (interesting) Related work
 
 * [Convolutional Imputation of Matrix Networks](https://arxiv.org/abs/1606.00925)
 * [Recurrent Inference Machines for Accelerated MRI Reconstruction](https://openreview.net/forum?id=rJD6Xgnoz)
