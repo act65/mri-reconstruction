@@ -6,8 +6,9 @@ Approaches?
 
 - Model uncertainty and tradeoff exploitation versus exploration (something like ucb).
 - RL to pick locations.
+- Differentiable sampling?
 
-### Representing the uncertainty of an MRI
+## Representing the uncertainty
 
 Uncertainty comes from two sources;
 - noise,
@@ -15,17 +16,6 @@ Uncertainty comes from two sources;
 
 All samples in an underconstrained set should have equal probability!?
 Noise should induce a distribution which would diffuse out from the samples in an underconstrained set.
-
-### RL
-
-Action = the possible places to sample.
-
-
-## Questions
-
-
-- How much time do we have? How long does it take for the MRI to take a sample?
-- Which dynamics of the MRI process matter here? Slew rates, ...?
 
 
 ## Online sampling
@@ -47,3 +37,21 @@ We can search for the sample that best reduces error and uncertainty.
 #### Learning the basis
 What about learning the right basis to use to sample!?
 - the magnetic resonance pertubations.
+
+
+### Theory
+
+__Want to show__
+
+The lower bound on error (wrt samples) in the online setting < lower bound with random samples.
+
+How uch better can you do if you get to pick the samples?
+- all in one go,
+- iteratively.
+
+
+## MRI specific
+
+
+- How much time do we have? How long does it take for the MRI to take a sample?
+- Which dynamics of the MRI process matter here? Slew rates, ...?
