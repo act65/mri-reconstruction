@@ -6,12 +6,9 @@ Let $X= \mathbb R^{n}$ and $Y=\mathbb R^{m}$ then set $n >> m$. Want to minimize
 
 <!-- So we have control over the forward function...!? -->
 
-Thoughts:
-
-*
-* Similar to compressed sensing, but we also have access to;
-  - the $x_i$s
-  - $df$.
+Similar to compressed sensing, but we also have access to;
+- the $x_i$s
+- $df$.
 
 
 Compressed sensing
@@ -23,14 +20,3 @@ $$
 Solutions
 - learned prior - GAN
 - learned sparse basis - AE
-
-
-## Online sampling
-
-
-
-
-
-## Reconstruction with context
-
-## ?
