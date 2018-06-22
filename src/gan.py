@@ -61,9 +61,11 @@ class GAN():
                 dtype is tf.float32
         """
         if z is None:
-            z = tf.random_normal(shape=(tf.shape(x)[0], 1, 1, self.n_hidden))
+            self.z = tf.random_normal(shape=(tf.shape(x)[0], 1, 1, self.n_hidden))
+        else:
+            self.z = z
 
-        x_fake = self.generator(z)
+        x_fake = self.generator(self.z)
         p_real = self.discriminator(x)
         p_fake = self.discriminator(x_fake)
         return x_fake, tf.layers.flatten(p_real), tf.layers.flatten(p_fake)
@@ -93,12 +95,12 @@ class GAN():
         return np.pad(im, [(0,0), (2,2), (2,2), (0,0)], 'constant', constant_values=0)
 
 if __name__ == '__main__':
-    # tf.enable_eager_execution()
-    x = tf.random_normal((100, 32, 32, 1))
+    tf.enable_eager_execution()
+    x = tf.random_normal((50, 32, 32, 1))
 
     nn = GAN(12, 16, 4)
     x_fake, p_real, p_fake = nn(x)
-    print(x_fake, p_real, p_fake)
+    print(x_fake.shape, p_real.shape, p_fake.shape)
 
     gen_loss, discrim_loss = nn.make_losses(x)
-    print(gen_loss, discrim_loss)
+    print(gen_loss.shape, discrim_loss.shape)
