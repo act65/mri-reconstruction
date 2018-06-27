@@ -41,6 +41,40 @@ def compute_mmd(x, y):
     xy_kernel = compute_kernel(x, y)
     return tf.reduce_mean(x_kernel) + tf.reduce_mean(y_kernel) - 2 * tf.reduce_mean(xy_kernel)
 
+def gaussian_d(x, y):
+    """
+    A conceptual lack of understanding here.
+    Do I need a dx to calculate this over?
+    Doesnt make sense for a single point!?
+    """
+    d = tf.norm(x - y, axis=1)
+    return tf.exp(-0.5*d)/(tf.sqrt(2*tf.constant(np.pi)))
+
+def pz(z):
+    """
+    Estimate p(z) using our prior on z.
+    """
+    z = tf.layers.flatten(z)
+    return gaussian_d(z , tf.zeros_like(z))
+
+def px_z(x_, y):
+    # the added noise in the hidden layer.
+    return gaussian_d(tf.layers.flatten(y[:,:,:,:1]),
+                      tf.layers.flatten(x_))
+
+def pz_x(h, z):
+    # the added noise in the final layer.
+    shape = h.get_shape().as_list()
+    return gaussian_d(tf.layers.flatten(h[:,:,:,:shape[-1]//2]),
+                      tf.layers.flatten(z))
+
+def p_bayes(x_, y, h, z):
+    """
+    If p(z | x) is far away from p(z) then p(x) is low
+    p(x) = p(x | z) p(z) / p(z | x)
+    """
+    return px_z(x_, y) * pz(z) / pz_x(h, z)
+
 class InfoVAE():
     def __init__(self, n_hidden, width, depth, stddev=0.01):
         """
@@ -119,9 +153,19 @@ class InfoVAE():
 
         return recon_loss, latent_loss
 
+    def estimate_density(self, x):
+        x_ = self.__call__(x)
+        real = p_bayes(x_, self.y, self.h, self.z)
+
+        x = tf.random_normal(shape=tf.shape(x))
+        x_ = self.__call__(x)
+        fake = p_bayes(x_, self.y, self.h, self.z)
+
+        return tf.reduce_mean(real), tf.reduce_mean(fake)
+
     @staticmethod
     def preprocess(x):
-        im = x.reshape((-1, 28, 28, 1))
+        im = np.reshape(x, [-1, 28, 28, 1])
         im = np.round(im).astype(np.float32)  # NOTE important !?
         return np.pad(im, [(0,0), (2,2), (2,2), (0,0)], 'constant', constant_values=0)
 

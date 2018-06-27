@@ -32,17 +32,23 @@ def main(args):
     recon_loss, latent_loss = nn.make_losses(x, x_)
     loss = recon_loss+latent_loss
 
+    p_real, p_fake = nn.estimate_density(x)
+
     train_summaries = [
         tf.summary.scalar('train/loss/recon', recon_loss),
         tf.summary.scalar('train/loss/latent', latent_loss),
         tf.summary.histogram('latents', nn.z),
         tf.summary.image('train/input', x),
         tf.summary.image('train/recon', tf.nn.sigmoid(x_)),
+        tf.summary.scalar('train/Px/real', p_real),
+        tf.summary.scalar('train/Px/fake', p_fake)
     ]
     test_summaries = [
         tf.summary.scalar('test/loss/recon', recon_loss),
         tf.summary.scalar('test/loss/latent', latent_loss),
         tf.summary.image('test/recon', tf.nn.sigmoid(x_)),
+        tf.summary.scalar('test/Px/real', p_real),
+        tf.summary.scalar('test/Px/fake', p_fake)
     ]
 
     train_merged = tf.summary.merge(train_summaries)
@@ -50,7 +56,8 @@ def main(args):
 
     opt = tf.train.AdamOptimizer()
     train_step = opt.minimize(loss)
-    saver = tf.train.Saver()
+    # saver = tf.train.Saver()
+    checkpoint = tf.contrib.eager.Checkpoint(**{var.name: var for var in tf.global_variables()})
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -70,7 +77,9 @@ def main(args):
                             infovae.InfoVAE.preprocess(mnist.test.images[:100, ...])})
                 print('\rStep: {} Loss: {}'.format(i, L), end='', flush=True)
                 writer.add_summary(test_summ, i)
-        save_path = saver.save(sess, os.path.join(args.logdir,"infovae.ckpt"))
+
+        save_path = checkpoint.save(os.path.join(args.logdir,"infovae.ckpt"))
+        # save_path = saver.save(sess, os.path.join(args.logdir,"infovae.ckpt"))
         print(save_path)
 
 if __name__ == '__main__':

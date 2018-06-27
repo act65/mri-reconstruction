@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 from functools import partial
 import src.utils as utils
 
@@ -8,9 +9,10 @@ Here we encode our knowledge about the forward process, in this case MRI.
 # TODO actual sampling of k-space occurs row-column wise and/or in spirals
 
 class MRI():
-    def __init__(self, stddev=1.0, n=4):
+    def __init__(self, stddev=1.0, n=4, N=100):
         self.stddev = stddev
         self.n = n
+        self.idx = tf.constant(np.random.randint(0, 32*32*1, N))
 
     def __call__(self, x):
         """
@@ -26,17 +28,24 @@ class MRI():
                 shape is [None, width, height, channels],
                 dtype is tf.complex 64
         """
+        if x.dtype != tf.complex64:
+            x = tf.cast(x, tf.complex64)
+
         y = tf.fft2d(x)
+        y = tf.real(y)
 
         # TODO not sure this works as intended
         # generate a random mask. aka the samples from y that we choose
-        mask = tf.random_uniform(tf.shape(y), minval=0, maxval=self.n, dtype=tf.int32)
-        mask = 1-tf.cast(tf.greater(mask, tf.ones_like(mask)), tf.float32)
-        self.mask = tf.complex(mask, mask)
-        y *= self.mask
+        # mask = tf.random_uniform(tf.shape(y), minval=0, maxval=self.n, dtype=tf.int32)
+        # mask = 1-tf.cast(tf.greater(mask, tf.ones_like(mask)), tf.float32)
+        # self.mask = tf.complex(mask, mask)
+        # y *= self.mask
+
+        y = tf.layers.flatten(y)
+        y = tf.gather(y, self.idx, axis=1)
 
         # also add some noise
-        y += utils.complex_random(tf.random_normal)(tf.shape(y))*self.stddev
+        y += tf.random_normal(tf.shape(y))*self.stddev
 
         return y
 
