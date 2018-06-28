@@ -9,10 +9,10 @@ Here we encode our knowledge about the forward process, in this case MRI.
 # TODO actual sampling of k-space occurs row-column wise and/or in spirals
 
 class MRI():
-    def __init__(self, stddev=1.0, n=4, N=100):
+    def __init__(self, stddev=0.1, n=4, N=100):
         self.stddev = stddev
         self.n = n
-        self.idx = tf.constant(np.random.randint(0, 32*32*1, N))
+        self.idx = tf.constant(np.random.choice(32*32*1, N, replace=False))
 
     def __call__(self, x):
         """
@@ -29,10 +29,11 @@ class MRI():
                 dtype is tf.complex 64
         """
         if x.dtype != tf.complex64:
-            x = tf.cast(x, tf.complex64)
+            x = tf.complex(x, tf.zeros_like(x))
 
         y = tf.fft2d(x)
-        y = tf.real(y)
+        y = tf.concat([tf.real(y) + tf.imag(y)], axis=1)  # cheating?
+        # y = tf.sqrt(tf.imag(y)**2 + tf.real(y)**2)
 
         # TODO not sure this works as intended
         # generate a random mask. aka the samples from y that we choose

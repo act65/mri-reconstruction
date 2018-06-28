@@ -17,6 +17,7 @@ def argumentparser():
     parser.add_argument('--n_hidden', type=int, default=12)
     parser.add_argument('--width', type=int, default=16)
     parser.add_argument('--depth', type=int, default=4)
+    parser.add_argument('--learning_rate', type=float, default=0.0001)
     return parser.parse_args()
 
 def main(args):
@@ -54,7 +55,7 @@ def main(args):
     train_merged = tf.summary.merge(train_summaries)
     test_merged = tf.summary.merge(test_summaries)
 
-    opt = tf.train.AdamOptimizer()
+    opt = tf.train.AdamOptimizer(args.learning_rate)
     train_step = opt.minimize(loss)
     # saver = tf.train.Saver()
     checkpoint = tf.contrib.eager.Checkpoint(**{var.name: var for var in tf.global_variables()})
@@ -78,8 +79,8 @@ def main(args):
                 print('\rStep: {} Loss: {}'.format(i, L), end='', flush=True)
                 writer.add_summary(test_summ, i)
 
-        save_path = checkpoint.save(os.path.join(args.logdir,"infovae.ckpt"))
-        # save_path = saver.save(sess, os.path.join(args.logdir,"infovae.ckpt"))
+        save_path = checkpoint.save(os.path.join(args.logdir, "infovae_ckpt.ckpt"))
+        # save_path = saver.save(sess, os.path.join(args.logdir,"infovae_saver.ckpt"))
         print(save_path)
 
 if __name__ == '__main__':
