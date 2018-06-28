@@ -29,19 +29,22 @@ Compressed Sensing (GANCS) Automates MRI](https://arxiv.org/abs/1706.00051)
 * [AMS feature](http://www.ams.org/publicoutreach/math-history/hap7-pixel.pdf)
 * [Compressive sensing review by Holtz](https://arxiv.org/abs/0812.3137)
 
-##### Theory
+##### Foundational theory
 
 * Candes, Romberg and Tao: [Stable Signal Recovery](http://statweb.stanford.edu/~candes/papers/StableRecovery.pdf) and [Robust Uncertainty Principles](http://statweb.stanford.edu/~candes/papers/ExactRecovery.pdf)
 * [Review by Donoho](https://statweb.stanford.edu/~donoho/Reports/2004/CompressedSensing091604.pdf)
-* [Algorithmic Regularization in Over-parameterized Matrix Sensing](https://arxiv.org/abs/1712.09203)
 * [Computational Complexity of Certifying
 Restricted Isometry Property](http://drops.dagstuhl.de/opus/volltexte/2014/4709/pdf/26.pdf)
 * [Adaptive greedy approximations](http://www.geoffdavis.net/papers/adaptive_approximations.pdf)
-* [Complex noiselet sensing matrices](https://arxiv.org/abs/1606.04535)
 
-##### Applied
+##### Other interesting papers
 
 * [CS for MRI with noiselets](https://arxiv.org/abs/1407.5536)
+* [Complex noiselet sensing matrices](https://arxiv.org/abs/1606.04535)
+* [Sparse recovery with sparse matrices](http://people.csail.mit.edu/indyk/report.pdf)
+* [Combining geometry and combinatorics](http://people.csail.mit.edu/indyk/rip2expand.pdf)
+* [Algorithmic Regularization in Over-parameterized Matrix Sensing](https://arxiv.org/abs/1712.09203)
+
 
 ### Deep learning
 
