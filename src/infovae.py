@@ -138,20 +138,32 @@ class InfoVAE():
             self.h = self.encoder(x)
             self.z = reparameterise(self.h, self.n_hidden, self.stddev)
             self.y = self.decoder(self.z)
-            return reparameterise(self.y, self.n_channels, self.stddev)
+            self.x_ = reparameterise(self.y, self.n_channels, self.stddev)
+            return self.x_
 
     def make_losses(self, x, y=None):
+        self.x = x
         if y is None:
-            y = self.__call__(x)
+            print('...')
+            y = self.__call__(self.x)
 
         with tf.name_scope('loss'):
             recon_loss = tf.losses.sigmoid_cross_entropy(
                 logits=tf.layers.flatten(y),
-                multi_class_labels=tf.layers.flatten(x))
+                multi_class_labels=tf.layers.flatten(self.x))
             latent_loss = compute_mmd(tf.layers.flatten(self.z),
                                   tf.layers.flatten(tf.random_normal(shape=tf.shape(self.z))))
 
         return recon_loss, latent_loss
+
+    def make_contractive_loss(self):
+        # assumes make_losses has already been called
+        print(self.h, self.x)
+        dhdx = tf.gradients(self.h, self.x)[0]
+        print(dhdx)
+        if dhdx is None:
+            raise ValueError()
+        return tf.reduce_mean(tf.reduce_sum(tf.square(dhdx), axis=[1,2,3]))
 
     def estimate_density(self, x):
         x_ = self.__call__(x)

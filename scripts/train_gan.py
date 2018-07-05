@@ -47,9 +47,12 @@ def main(args):
     test_merged = tf.summary.merge(test_summaries)
 
     opt = tf.train.AdamOptimizer()
-    discrim_step = opt.minimize(discrim_loss, var_list=nn.discriminator.variables)
-    gen_step = opt.minimize(gen_loss, var_list=nn.generator.variables)
-    train_step = tf.group(*[discrim_step, gen_step])
+    discrim_gnvs = opt.compute_gradients(discrim_loss, var_list=nn.discriminator.variables)
+    gen_gnvs = opt.compute_gradients(gen_loss, var_list=nn.generator.variables)
+    gnvs = discrim_gnvs + gen_gnvs
+
+    train_step = opt.apply_gradients(gnvs)
+
     saver = tf.train.Saver()
 
     with tf.Session() as sess:

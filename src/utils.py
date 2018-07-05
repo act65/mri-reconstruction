@@ -39,6 +39,29 @@ class PyramidLoss(tf.keras.Model):
             activations.append(x)
         return activations
 
+def input_fn(batch_size):
+    """An input function for training"""
+    # Convert the inputs to a Dataset.
+    """
+    ds = input_fn(50)
+    iterator = ds.make_one_shot_iterator()
+    img, t = iterator.get_next()
+    init_op = iterator.make_initializer(ds)
+    """
+
+    from tensorflow.examples.tutorials.mnist import input_data
+    mnist = input_data.read_data_sets("/tmp/MNIST_data/", one_hot=False)
+
+    dataset = tf.data.Dataset.from_tensor_slices((mnist.train.images, mnist.train.labels))
+    dataset = dataset.map(lambda x, y: (tf.reshape(x, [28, 28, 1]), tf.cast(y, tf.int32)))
+    dataset = dataset.map(lambda x, y: (tf.pad(x, [[2,2], [2,2], [0,0]], "CONSTANT"), tf.reshape(y, [-1])))
+
+    # Shuffle, repeat, and batch the examples.
+    dataset = dataset.shuffle(1000).repeat().batch(batch_size)
+
+    # Return the dataset.
+    return dataset
+
 if __name__ == '__main__':
     t = tf.random_normal(shape=(10, 32, 32, 1))
     y = tf.random_normal(shape=(10, 32, 32, 1))
