@@ -62,8 +62,17 @@ def main(args):
     train_merged = tf.summary.merge(train_summaries)
     test_merged = tf.summary.merge(test_summaries)
 
-    opt = tf.train.AdamOptimizer(args.learning_rate)
-    train_step = opt.minimize(loss)
+    global_step = tf.train.get_or_create_global_step()
+    learning_rate = tf.train.exponential_decay(
+                        args.learning_rate,
+                        global_step,
+                        500,
+                        0.5)
+
+    opt = tf.train.GradientDescentOptimizer(learning_rate)
+    gnvs = opt.compute_gradients(loss)
+    gnvs = [(tf.clip_by_norm(g, 10), v) for g, v in gnvs]
+    train_step = opt.apply_gradients(gnvs, global_step=global_step)
     saver = tf.train.Saver()
     checkpoint = tf.contrib.eager.Checkpoint(**{var.name: var for var in tf.global_variables()})
 
