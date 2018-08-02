@@ -75,6 +75,15 @@ def p_bayes(x_, y, h, z):
     """
     return px_z(x_, y) * pz(z) / pz_x(h, z)
 
+# def KL_divergence(p, q):
+#     return tf.reduce_sum(p * tf.log(p/q), axis=-1)
+#
+# def bayesian_surprise(z):
+#     """
+#
+#     """
+#     return kl(z, prior)
+
 class InfoVAE():
     def __init__(self, n_hidden, width, depth, stddev=0.01):
         """
@@ -167,13 +176,7 @@ class InfoVAE():
 
     def estimate_density(self, x):
         x_ = self.__call__(x)
-        real = p_bayes(x_, self.y, self.h, self.z)
-
-        x = tf.random_normal(shape=tf.shape(x))
-        x_ = self.__call__(x)
-        fake = p_bayes(x_, self.y, self.h, self.z)
-
-        return tf.reduce_mean(real), tf.reduce_mean(fake)
+        return p_bayes(x_, self.y, self.h, self.z)
 
     @staticmethod
     def preprocess(x):

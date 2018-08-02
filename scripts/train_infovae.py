@@ -31,8 +31,6 @@ def main(args):
     recon_loss, latent_loss = nn.make_losses(x)
     loss = recon_loss+args.beta*latent_loss
 
-
-
     train_summaries = [
         tf.summary.scalar('train/loss/recon', recon_loss),
         tf.summary.scalar('train/loss/latent', latent_loss),
@@ -49,15 +47,16 @@ def main(args):
         train_summaries.append(tf.summary.scalar('train/loss/cont', cont_loss))
 
 
-    p_real, p_fake = nn.estimate_density(x)
+    p_real = nn.estimate_density(x)
+    p_fake = nn.estimate_density(tf.random_normal(shape=tf.shape(x)))
     test_summaries = [
         tf.summary.scalar('test/loss/recon', recon_loss),
         tf.summary.scalar('test/loss/latent', latent_loss),
+        tf.summary.image('test/input', x),
         tf.summary.image('test/recon', tf.nn.sigmoid(nn.x_)),
-        tf.summary.scalar('test/Px/real', p_real),
-        tf.summary.scalar('test/Px/fake', p_fake)
+        tf.summary.scalar('test/Px/real', tf.reduce_mean(p_real)),
+        tf.summary.scalar('test/Px/fake', tf.reduce_mean(p_fake))
     ]
-
 
     train_merged = tf.summary.merge(train_summaries)
     test_merged = tf.summary.merge(test_summaries)
@@ -69,7 +68,7 @@ def main(args):
                         500,
                         0.5)
 
-    opt = tf.train.GradientDescentOptimizer(learning_rate)
+    opt = tf.train.AdamOptimizer(learning_rate)
     gnvs = opt.compute_gradients(loss)
     gnvs = [(tf.clip_by_norm(g, 10), v) for g, v in gnvs]
     train_step = opt.apply_gradients(gnvs, global_step=global_step)
@@ -95,9 +94,10 @@ def main(args):
                 print('\rStep: {} Loss: {}'.format(i, L), end='', flush=True)
                 writer.add_summary(test_summ, i)
 
-        save_path = checkpoint.save(os.path.join(args.logdir, "infovae_ckpt.ckpt"))
-        save_path = saver.save(sess, os.path.join(args.logdir,"infovae_saver.ckpt"))
-        print(save_path)
+            if i % 1000 == 0:
+                save_path = checkpoint.save(os.path.join(args.logdir, "infovae_ckpt.ckpt"))
+                save_path = saver.save(sess, os.path.join(args.logdir,"infovae_saver.ckpt"))
+                print(save_path)
 
 if __name__ == '__main__':
     main(argumentparser())
