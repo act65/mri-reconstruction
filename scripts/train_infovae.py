@@ -24,18 +24,22 @@ def main(args):
     from tensorflow.examples.tutorials.mnist import input_data
     mnist = input_data.read_data_sets("/tmp/MNIST_data/", one_hot=True)
 
+    with tf.variable_scope('s'):
+        nn = infovae.InfoVAE(args.n_hidden, args.width, args.depth)
 
-    nn = infovae.InfoVAE(args.n_hidden, args.width, args.depth)
+        x = tf.placeholder(shape=[None, 32, 32, 1], dtype=tf.float32)
+        recon_loss, latent_loss = nn.make_losses(x)
+        loss = recon_loss+args.beta*latent_loss
 
-    x = tf.placeholder(shape=[None, 32, 32, 1], dtype=tf.float32)
-    recon_loss, latent_loss = nn.make_losses(x)
-    loss = recon_loss+args.beta*latent_loss
+    with tf.variable_scope('s'):
+        g = infovae.reparameterise(nn.decoder(tf.random_normal(shape=tf.shape(nn.z))), 1, 0.0001)
 
     train_summaries = [
         tf.summary.scalar('train/loss/recon', recon_loss),
         tf.summary.scalar('train/loss/latent', latent_loss),
         tf.summary.histogram('latents', nn.z),
         tf.summary.image('train/input', x),
+        tf.summary.image('train/gen', g, max_outputs=10),
         tf.summary.image('train/recon', tf.nn.sigmoid(nn.x_)),
         # tf.summary.scalar('train/Px/real', p_real),
         # tf.summary.scalar('train/Px/fake', p_fake)
@@ -62,18 +66,20 @@ def main(args):
     test_merged = tf.summary.merge(test_summaries)
 
     global_step = tf.train.get_or_create_global_step()
-    learning_rate = tf.train.exponential_decay(
-                        args.learning_rate,
-                        global_step,
-                        500,
-                        0.5)
+    learning_rate = args.learning_rate
+    # learning_rate = tf.train.exponential_decay(
+    #                     args.learning_rate,
+    #                     global_step,
+    #                     500,
+    #                     0.5)
 
     opt = tf.train.AdamOptimizer(learning_rate)
     gnvs = opt.compute_gradients(loss)
-    gnvs = [(tf.clip_by_norm(g, 10), v) for g, v in gnvs]
+    gnvs = [(tf.clip_by_norm(g, 1), v) for g, v in gnvs]
     train_step = opt.apply_gradients(gnvs, global_step=global_step)
     saver = tf.train.Saver()
     checkpoint = tf.contrib.eager.Checkpoint(**{var.name: var for var in tf.global_variables()})
+
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())

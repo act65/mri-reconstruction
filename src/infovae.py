@@ -85,7 +85,7 @@ def p_bayes(x_, y, h, z):
 #     return kl(z, prior)
 
 class InfoVAE():
-    def __init__(self, n_hidden, width, depth, stddev=0.01):
+    def __init__(self, n_hidden, width, depth, stddev=0.0001):
         """
         Args:
 

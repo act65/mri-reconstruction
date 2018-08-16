@@ -46,12 +46,30 @@ def main(args):
     train_merged = tf.summary.merge(train_summaries)
     test_merged = tf.summary.merge(test_summaries)
 
-    opt = tf.train.AdamOptimizer()
-    discrim_gnvs = opt.compute_gradients(discrim_loss, var_list=nn.discriminator.variables)
-    gen_gnvs = opt.compute_gradients(gen_loss, var_list=nn.generator.variables)
-    gnvs = discrim_gnvs + gen_gnvs
+    with tf.variable_scope('opt') as scope:
+        dis_opt = tf.train.AdamOptimizer(0.0001)#, beta1=0.9, beta2=0.99)
+        gen_opt = tf.train.AdamOptimizer(0.0001)#, beta1=0.7, beta2=0.9)
+        discrim_gnvs = dis_opt.compute_gradients(discrim_loss, var_list=nn.discriminator.variables)
+        gen_gnvs = gen_opt.compute_gradients(gen_loss, var_list=nn.generator.variables)
+        discrim_gnvs = [(tf.clip_by_norm(g, 10), v) for g, v in discrim_gnvs]
+        gen_gnvs = [(tf.clip_by_norm(g, 10), v) for g, v in gen_gnvs]
 
-    train_step = opt.apply_gradients(gnvs)
+        gnvs = discrim_gnvs + gen_gnvs
+
+        dis_step = dis_opt.apply_gradients(discrim_gnvs)
+        gen_step = gen_opt.apply_gradients(gen_gnvs)
+        train_step = tf.group(*[gen_step, dis_step])
+
+    # print(dir(tf.GraphKeys))
+    # print(dir(opt))
+    # print(tf.GraphKeys._VARIABLE_COLLECTIONS)
+    # print(opt.variables())
+    # print(help(opt.get_slot))
+    # optimizer_scope = tf.get_collection(tf.GraphKeys.VARIABLES, "opt")
+    # optimizer_scope = [v for v in optimizer_scope if 'beta' not in v.name]
+    # print(optimizer_scope)
+    #
+    # raise SystemExit
 
     saver = tf.train.Saver()
 
@@ -64,6 +82,9 @@ def main(args):
             _, train_summ = sess.run([train_step, train_merged],
                                      feed_dict={x: gan.GAN.preprocess(batch_x)})
 
+            # if i % 2 == 0:
+            #     sess.run(gen_step,feed_dict={x: gan.GAN.preprocess(batch_x)})
+
             if i % 10 == 0:
                 writer.add_summary(train_summ, i)
 
@@ -73,8 +94,11 @@ def main(args):
                             gan.GAN.preprocess(mnist.test.images[:100, ...])})
                 print('\rStep: {} Loss: {}'.format(i, L), end='', flush=True)
                 writer.add_summary(test_summ, i)
-        save_path = saver.save(sess, os.path.join(args.logdir,"gan.ckpt"))
-        print(save_path)
+
+            if i % 500 == 0:
+                # sess.run(tf.initialize_variables(optimizer_scope))
+                save_path = saver.save(sess, os.path.join(args.logdir,"gan.ckpt"))
+                print(save_path)
 
 if __name__ == '__main__':
     main(argumentparser())

@@ -7,6 +7,8 @@ The ability to add semantically meaningful information.
 
 To add arbitrarily large amounts of information. Or arbitrarily large pertubations.
 
+All we can really ask is that the image is consistent with the measurements.
+
 ## Intro to CS
 
 Goal
