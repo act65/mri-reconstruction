@@ -1,9 +1,16 @@
 # mri-reconstruction
 
-* Reconstruction with context (coronal, sagital, ventral sections or patient history, genetics)
-* Reconstruction with few samples (learned priors, sparse bases, compressed sampling)
-* (Learn to) iteratively pick the best points to samples that minimise uncertainty and maximise the accuracy of reconstruction.  
+This repo contains my notes and code while exploring how to use learned priors for compressed sensing.
 
+## Docs
+
+I have written a couple of documents detailing my thoughts on;
+
+- [learned priors for comressed sensing](https://github.com/act65/mri-reconstruction/blob/master/docs/learn-prior.md)
+- [density estimation](https://github.com/act65/mri-reconstruction/blob/master/docs/density.md)
+- [reconstruction with guarantees](https://github.com/act65/mri-reconstruction/blob/master/docs/guarantees.md)
+
+## Code
 
 To run the scripts you will need to
 
@@ -25,7 +32,6 @@ python scripts/train_infovae.py --logdir={path} \\
 To run the notebooks you will need to
 ```
 pip install jupyterlab
-cd mri-reconstruction
 jupyter lab
 ```
 and then navigate to [http://localhost:8888/lab](http://localhost:8888/lab).
