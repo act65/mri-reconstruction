@@ -19,7 +19,7 @@ def reparameterise(x, n, stddev):
         e = tf.random_normal(tf.shape(z_mean), stddev=stddev)
 
         # TODO log_var or stddev?
-        return z_mean + z_stddev*e
+        return z_mean + tf.square(z_stddev)*e
 
 def compute_kernel(x, y):
     """

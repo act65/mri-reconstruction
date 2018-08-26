@@ -92,3 +92,21 @@ $\mathcal A_{?}$
 #### Empirical
 
 Given a classifier and a labelled dataset show that the number of false positives/false negatives introduced by the learned prioir is small.
+
+
+
+
+
+## Safe reconstruction
+
+
+
+$$
+\mathop{\text{argmin}}_x \parallel \phi(x) \parallel_1 \text{ s.t. } \parallel f(x) - y\parallel_2 < \epsilon \\
+\mathop{\text{argmin}}_x \parallel \phi(x) \parallel_1 + \lambda \parallel f(x) - y\parallel_2 \\
+$$
+
+But what value of $\lambda$ should be chosen? it depends of $\epsilon$ and the amount of noise in the sampling process, $f$.
+
+We want to pick $\lambda$ so that no progess on $\parallel f(x) - y \parallel_2$ is sacrificed.
+But if you are too strict then the may end p reconstructing noise...!?

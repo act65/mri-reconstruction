@@ -39,6 +39,58 @@ class PyramidLoss(tf.keras.Model):
             activations.append(x)
         return activations
 
+class Net():
+    def __init__(self, n_hidden, width, depth, stddev=0.0001):
+        """
+        Args:
+
+        """
+        self.n_hidden = n_hidden
+        self.width = width
+        self.depth = depth
+        self.n_channels = 1
+        self.stddev = stddev
+
+        self.construct()
+
+    def construct(self):
+        """
+        Constructs:
+            encoder (tf.keras.Model): encode the gradient into the hidden space
+            decoder (tf.keras.Model): decodes a hidden state into an image
+        """
+        layers = []
+        layers.append(tf.keras.layers.Conv2D(self.width, 4, strides=(2, 2),
+                                   padding='same',
+                                   # input_shape=(28,28,1)
+                                   ))
+        layers.append(tf.keras.layers.Activation(tf.keras.activations.selu))
+        for i in range(self.depth):
+            layers.append(tf.keras.layers.Conv2D(self.width,
+                                                 4,
+                                                 strides=(2, 2),
+                                                 padding='same'),)
+            layers.append(tf.keras.layers.Activation(tf.keras.activations.selu))
+        layers.append(tf.keras.layers.Conv2D(self.n_hidden,
+                                1,
+                                strides=(1, 1),
+                                padding='same'))
+        self.encoder = tf.keras.Sequential(layers)
+
+        # decoder
+        layers = []
+        layers.append(tf.keras.layers.Conv2DTranspose(self.width, 4, strides=(2, 2),
+                                            padding='same',
+                                            # input_shape=(1,1,self.n_hidden)
+                                            ))
+        layers.append(tf.keras.layers.Activation(tf.keras.activations.selu))
+        for _ in range(self.depth):
+            layers.append(tf.keras.layers.Conv2DTranspose(self.width, 4, strides=(2, 2), padding='same'))
+            layers.append(tf.keras.layers.Activation(tf.keras.activations.selu))
+        layers.append(tf.keras.layers.Conv2DTranspose(self.n_channels, 1, strides=(1, 1), padding='same'))
+        self.decoder = tf.keras.Sequential(layers)
+
+
 def input_fn(batch_size):
     """An input function for training"""
     # Convert the inputs to a Dataset.
@@ -54,7 +106,7 @@ def input_fn(batch_size):
 
     dataset = tf.data.Dataset.from_tensor_slices((mnist.train.images, mnist.train.labels))
     dataset = dataset.map(lambda x, y: (tf.reshape(x, [28, 28, 1]), tf.cast(y, tf.int32)))
-    dataset = dataset.map(lambda x, y: (tf.pad(x, [[2,2], [2,2], [0,0]], "CONSTANT"), tf.reshape(y, [-1])))
+    # dataset = dataset.map(lambda x, y: (tf.pad(x, [[2,2], [2,2], [0,0]], "CONSTANT"), tf.reshape(y, [-1])))
 
     # Shuffle, repeat, and batch the examples.
     dataset = dataset.shuffle(1000).repeat().batch(batch_size)
