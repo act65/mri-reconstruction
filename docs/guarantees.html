@@ -20,118 +20,120 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-  <h1>Safe reconstruction and guarantees</h1>
+    <div>
+    <h1>Safe reconstruction and guarantees</h1>
 
-  We want the ability reconstruct images from fewer samples as this would allow cheaper and faster imaging. We can achieve this because natural images lie in a subspace of their domain, they are structured.
+    We want the ability reconstruct images from fewer samples as this would allow cheaper and faster imaging. We can achieve this because natural images lie in a subspace of their domain, they are structured.
 
-  But how can this reconstruction from fewer samples go wrong?
-  <ul>
-  <li> You need to ensure you have sampled the 'right' information.</li>
-  <li> You need to make sure that beliefs do not override the
-    sampled information (safety) (but if there is noise then ...!?)</li>
-  </ul>
+    But how can this reconstruction from fewer samples go wrong?
+    <ul>
+    <li> You need to ensure you have sampled the 'right' information.</li>
+    <li> You need to make sure that beliefs do not override the
+      sampled information (safety) (but if there is noise then ...!?)</li>
+    </ul>
 
-  What I am worried about is, for example, a tumor being removed from a reconstruction because our prior knowledge about the images allocates the tumor low probability.
+    What I am worried about is, for example, a tumor being removed from a reconstruction because our prior knowledge about the images allocates the tumor low probability.
 
-  If these algorithms are to be used in paractice they will need to provide guarantees. For example, provable bounds on the likelihood of introducing a false positive, or a false negative.
+    If these algorithms are to be used in paractice they will need to provide guarantees. For example, provable bounds on the likelihood of introducing a false positive, or a false negative.
 
-  <h2>Compressed sensing</h2>
+    <h2>Compressed sensing</h2>
 
-  Copressed sensing is typically formaised as finding the optimal solution to an $L_1$ minimisation problem, such that the reconstruction explains the measurements recieved.
+    Copressed sensing is typically formaised as finding the optimal solution to an $L_1$ minimisation problem, such that the reconstruction explains the measurements recieved.
 
-  $$
-  \begin{align}
-  y &= f(\hat x) , f: \mathbb R^n \rightarrow \mathbb R^m \tag{n >> m}\\
-  \psi: &\mathbb R^n \rightarrow \mathbb R^p \\
-  \mathop{\text{argmin}}_x &\parallel \phi(x) \parallel_1 \text{ s.t. } \parallel f(x) - y\parallel_2 < \epsilon \\
-  \end{align}
-  $$
+    $$
+    \begin{align}
+    y &= f(\hat x) , f: \mathbb R^n \rightarrow \mathbb R^m \tag{n >> m}\\
+    \psi: &\mathbb R^n \rightarrow \mathbb R^p \\
+    \mathop{\text{argmin}}_x &\parallel \phi(x) \parallel_1 \text{ s.t. } \parallel f(x) - y\parallel_2 < \epsilon \\
+    \end{align}
+    $$
 
-  Another way to think about this is that: because we have few measrements, there are many possible images that explain these measurements. Thus we need to external information, regularisers/beliefs, to pick a reconstruction out of the many plausible ones.
+    Another way to think about this is that: because we have few measrements, there are many possible images that explain these measurements. Thus we need to external information, regularisers/beliefs, to pick a reconstruction out of the many plausible ones.
 
-  $$
-  \begin{align}
-  \mathcal S &= \{x_i:  \parallel \psi(x) - y \parallel_2 \le \epsilon,  \forall x_i \in \mathbb R^n\} \tag{4} \\
-  \end{align}
-  $$
+    $$
+    \begin{align}
+    \mathcal S &= \{x_i:  \parallel \psi(x) - y \parallel_2 \le \epsilon,  \forall x_i \in \mathbb R^n\} \tag{4} \\
+    \end{align}
+    $$
 
-  Which priors/regularisers work and why?
+    Which priors/regularisers work and why?
 
-  Some regularisers and sparse domains have been used for many years and shown great success. These include, using the fourier domain as a basis, total variation regulariser, and more.
+    Some regularisers and sparse domains have been used for many years and shown great success. These include, using the fourier domain as a basis, total variation regulariser, and more.
 
-  $$
-  \begin{align}
-  \mathop{\text{argmin}}_x & \parallel \psi(x) - y \parallel_2  + \lambda \parallel \phi(x) \parallel_1 \tag{2}\\
-  \end{align}
-  $$
+    $$
+    \begin{align}
+    \mathop{\text{argmin}}_x & \parallel \psi(x) - y \parallel_2  + \lambda \parallel \phi(x) \parallel_1 \tag{2}\\
+    \end{align}
+    $$
 
-  Recent work has used GANs to estimate $p(x)$.
+    Recent work has used GANs to estimate $p(x)$.
 
-  $$
-  \begin{align}
-  \mathop{\text{argmin}}_x & \parallel \psi(x) - y \parallel_2  + \lambda (1-p(x)) \tag{3}\\
-  \end{align}
-  $$
-
-
-  <h3>Fantasised information</h3>
-
-  However, I am worried that there is a fundamental difference between these regulariser.
-
-  Conjecture:
-  <blockquote>compressed sensing regularisers (TV, L1) are 'safer' than learned regularisers.</blockquote>
-
-  TV and $ L_1 $ (in a 'simple' domain) seem to lack the ability to add semantically meaningful information. I want to say something like:
-
-  > learned priors can add objects with marcoscopic structure into the reconstructed image.
-
-  but that is not true. $ L_1 $ in the fourier domain can regularise large wavelength signals and thus have globally structured effects.
-
-  Questions I would like to find answers for:
-  - Under which conditions are macroscopic fantaies added?
-  - What is the definition of macroscopic? How can it be measured?
-
-  If we take two images, on reconstructed with a learned prior and another reconstructed with TV.
-
-  Possibly solution sketch. Want to show that optimising TV/$ L_1 $ picks a solution from $ )\mathcal S $ But, optimising a learned prior doesnt not guarantee that the solution is consistent with the observations. In fact it can be arbitrarily far away.
-
-  Note: I think there are some important relationships to;
-  - mode collapse. If a mode has been dropped by the learned prior then it will push the reconstruction away from that location. How can you verify that all modes have been captured?
-  - adversarial examples. Inperceptibly small changes to an image can cause classification error. So if a learned prior introduces these artifacts then, while looking similar to us, automated classifiers will miss classify the image.
-
-  <h2>Guarantees</h2>
-
-  <blockquote> If I get a MRI scan and I am told that 12-samples were used to
-    construct the images that show I have a tumor, I am going to want some
-    guarantees on what information can be added (or removed) into the reconstruction.</blockquote>
-
-  What form could these guarantees take?
+    $$
+    \begin{align}
+    \mathop{\text{argmin}}_x & \parallel \psi(x) - y \parallel_2  + \lambda (1-p(x)) \tag{3}\\
+    \end{align}
+    $$
 
 
-  <ol>
-    <li> bounds on false positive/negatives, $ \text{mistakes} \sim {O(log{\frac{1}{n_{samples}}})} $ </li>
-    <li> empirical tests, $ \text{class}(x) \approx \text{class}(\text{recon}_k(y)) $ </li>
-  </ol>
+    <h3>Fantasised information</h3>
+
+    However, I am worried that there is a fundamental difference between these regulariser.
+
+    Conjecture:
+    <blockquote>compressed sensing regularisers (TV, L1) are 'safer' than learned regularisers.</blockquote>
+
+    TV and $ L_1 $ (in a 'simple' domain) seem to lack the ability to add semantically meaningful information. I want to say something like:
+
+    > learned priors can add objects with marcoscopic structure into the reconstructed image.
+
+    but that is not true. $ L_1 $ in the fourier domain can regularise large wavelength signals and thus have globally structured effects.
+
+    Questions I would like to find answers for:
+    - Under which conditions are macroscopic fantaies added?
+    - What is the definition of macroscopic? How can it be measured?
+
+    If we take two images, on reconstructed with a learned prior and another reconstructed with TV.
+
+    Possibly solution sketch. Want to show that optimising TV/$ L_1 $ picks a solution from $ )\mathcal S $ But, optimising a learned prior doesnt not guarantee that the solution is consistent with the observations. In fact it can be arbitrarily far away.
+
+    Note: I think there are some important relationships to;
+    - mode collapse. If a mode has been dropped by the learned prior then it will push the reconstruction away from that location. How can you verify that all modes have been captured?
+    - adversarial examples. Inperceptibly small changes to an image can cause classification error. So if a learned prior introduces these artifacts then, while looking similar to us, automated classifiers will miss classify the image.
+
+    <h2>Guarantees</h2>
+
+    <blockquote> If I get a MRI scan and I am told that 12-samples were used to
+      construct the images that show I have a tumor, I am going to want some
+      guarantees on what information can be added (or removed) into the reconstruction.</blockquote>
+
+    What form could these guarantees take?
 
 
-  <ol>
-    <li> Empirical tests only apply to the existing data gathered, and provide no guarantees for the test set. </li>
-    <li> How can you bound the mistakes made? You need to define a task. </li>
-  </ol>
+    <ol>
+      <li> bounds on false positive/negatives, $ \text{mistakes} \sim {O(log{\frac{1}{n_{samples}}})} $ </li>
+      <li> empirical tests, $ \text{class}(x) \approx \text{class}(\text{recon}_k(y)) $ </li>
+    </ol>
 
 
-  <h2>Safe reconstruction</h2>
+    <ol>
+      <li> Empirical tests only apply to the existing data gathered, and provide no guarantees for the test set. </li>
+      <li> How can you bound the mistakes made? You need to define a task. </li>
+    </ol>
 
-  What we want to is balance the two competing objectives: A reconstruction that explains the measurements, and a reconstruction that is structured according to our prior beliefs.
 
-  What we dont want is our prior beliefs out-competing the measurements made (given other beliefs about the accuracy the measurements). In the original framing of the problem (see Compressed Sensing) this is not an issue because we are optimising the structure such that an reconstruction still explains the measurements.
+    <h2>Safe reconstruction</h2>
 
-  But, in practice you often use the Largangian multiplier to make optimisation easier.
+    What we want to is balance the two competing objectives: A reconstruction that explains the measurements, and a reconstruction that is structured according to our prior beliefs.
 
-  $$
-  \mathop{\text{argmin}}_x \parallel \phi(x) \parallel_1 + \lambda \parallel f(x) - y\parallel_2 \\
-  $$
+    What we dont want is our prior beliefs out-competing the measurements made (given other beliefs about the accuracy the measurements). In the original framing of the problem (see Compressed Sensing) this is not an issue because we are optimising the structure such that an reconstruction still explains the measurements.
 
-  We have now lost the nice guarantee that the reconstructed $ x $ must explain the data (within $ \epsilon $). The reconstruction now relies on the optimisation prodceure/dynamics (which is possibly nonconvex) and the value of the multiplier.
+    But, in practice you often use the Largangian multiplier to make optimisation easier.
+
+    $$
+    \mathop{\text{argmin}}_x \parallel \phi(x) \parallel_1 + \lambda \parallel f(x) - y\parallel_2 \\
+    $$
+
+    We have now lost the nice guarantee that the reconstructed $ x $ must explain the data (within $ \epsilon $). The reconstruction now relies on the optimisation prodceure/dynamics (which is possibly nonconvex) and the value of the multiplier.
+  </div>
 </body>
 </html>
