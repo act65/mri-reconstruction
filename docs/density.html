@@ -26,6 +26,56 @@
   Why is density estimation hard?
   In high dimensions are the many directions and a large amount of volume.
 
+
+  In the previous section we considered VAEs and GANs for pseudo-density estimation.
+  The deeper problem to the learned prior approach seems to be that we dont have have any good models of density...
+
+  <img src="assets/generative_modelling_challenges.png">
+
+
+  <h3>Parzen windows</h3>
+
+  Given the tip above, I had a play with parzen windows to see how well they can be used to turn a VAE into a density estimate.
+
+  $$
+  p(x) = \frac{1}{n}\sum_i^n k(x, \hat x_i)
+  $$
+
+  So, I used the hidden space of a VAE as the inputs to a parzen window (hoping the the latent space would give greater generalisation as it is lower dimensional).
+
+  <img src="assets/latent_space.png">
+
+  So using the equation above we can estimate the probability of data.
+  $$
+  p(x) = \frac{1}{n}\sum_{i=0}^n k(f(x), f(\hat x_i))
+  $$
+
+  <img src="assets/parzen_high_temp.png">
+
+  Cool, we seem to have a nice structured estimate of P(x), with gradient pointing in meaningful directions.
+
+  But, using this parzen window we seem to get equal estiamtes of P(x) for images from MNIST and for generated (white noise) images.
+
+  <img src="assets/p_parzen_fake_real.png">
+
+  Ok, the problem is that the kernels are too wide and are allocating probability to locations further away from the data. Solution, reduce the width of the kernels.
+
+  <img src="assets/parzen_low_temp.png">
+  <img src="assets/p_parzen_separated.png">
+
+  The problem is now that the gradients don't point in any meaningful directions. They will simply lead you to the nearest data point.
+
+  <i>Maybe there is an optimal tuning of the width to give desired results.
+    But I didnt spend much time exploring this.</i>
+
+  <h3>Future directions</h3>
+
+  Quick wins: Could try playing with <a href=https://en.wikipedia.org/wiki/Gaussian_process>Gaussian processes</a>
+   or <a href=https://arxiv.org/abs/1807.01622>Neural processes</a>.
+
+  Or look into information geometry to ...?
+
+
   <h2> Maximum likelihood</h2>
 
   In an ideal world we would like the ability to approximate arbitrary distributions. To learn $ f: X \to Y $ such that the probability density is preserved. An easy and intuitive way to learn a density model is by maximum likelihood estimation.
