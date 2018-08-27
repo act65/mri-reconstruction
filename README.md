@@ -6,9 +6,9 @@ This repo contains my notes and code while exploring how to use learned priors f
 
 I have written a couple of documents detailing my thoughts on;
 
-- [learned priors for comressed sensing](https://github.com/act65/mri-reconstruction/blob/master/docs/learn-prior.md)
-- [density estimation](https://github.com/act65/mri-reconstruction/blob/master/docs/density.md)
-- [reconstruction with guarantees](https://github.com/act65/mri-reconstruction/blob/master/docs/guarantees.md)
+- [learned priors for comressed sensing](https://act65.github.io/mri-reconstruction/learned-prior)
+- [density estimation](https://act65.github.io/mri-reconstruction/density)
+- [reconstruction with guarantees](https://act65.github.io/mri-reconstruction/guarantees)
 
 ## Code
 

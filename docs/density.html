@@ -17,16 +17,16 @@
     </script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML-full">
     </script>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML-full" type="text/javascript"></script> -->
-  </head>
-
-<xmp theme="united" style="display:none;">
-  # Density estimation
+    <link rel="stylesheet" href="style.css">
+ </head>
+ <body>
+   <div>
+  <h1>Density estimation</h1>
 
   Why is density estimation hard?
   In high dimensions are the many directions and a large amount of volume.
 
-  ## Maximum likelihood
+  <h2> Maximum likelihood</h2>
 
   In an ideal world we would like the ability to approximate arbitrary distributions. To learn $ f: X \to Y $ such that the probability density is preserved. An easy and intuitive way to learn a density model is by maximum likelihood estimation.
 
@@ -82,21 +82,26 @@
   Want some sort of decomposition of the integral into something nicer.
   Want an analytical way to calculate it!?
 
-  ## Normalising flows
+  <h2>Normalising flows</h2>
 
+  What if instead we could start with a simple distribution and transform it into an arnitrary distribution?
+
+  Effectively just pushing around probability mass.
+  So how can we keep tr
 
   $$
   p(f(x)) = \frac{1}{det(J(f))}p(x) \\
   $$
 
-
   But want to decompse the prior.
   Masked autoregressive.
 
   Problems.
-  - Too much non linearity makes ...
-  - Must be ivertible!?
+  <ol>
+    <li> Too much non linearity makes ...</li>
+    <li> Must be ivertible!?</li>
+  </ol>
 
-</xmp>
-<script src="http://strapdownjs.com/v/0.2/strapdown.js"></script>
+</div>
+</body>
 </html>
