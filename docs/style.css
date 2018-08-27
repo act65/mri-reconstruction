@@ -1,0 +1,15 @@
+div {
+    margin: 10px 20vh 30px 20vh;
+}
+blockquote {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
