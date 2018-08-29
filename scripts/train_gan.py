@@ -60,17 +60,6 @@ def main(args):
         gen_step = gen_opt.apply_gradients(gen_gnvs)
         train_step = tf.group(*[gen_step, dis_step])
 
-    # print(dir(tf.GraphKeys))
-    # print(dir(opt))
-    # print(tf.GraphKeys._VARIABLE_COLLECTIONS)
-    # print(opt.variables())
-    # print(help(opt.get_slot))
-    # optimizer_scope = tf.get_collection(tf.GraphKeys.VARIABLES, "opt")
-    # optimizer_scope = [v for v in optimizer_scope if 'beta' not in v.name]
-    # print(optimizer_scope)
-    #
-    # raise SystemExit
-
     saver = tf.train.Saver()
 
     with tf.Session() as sess:

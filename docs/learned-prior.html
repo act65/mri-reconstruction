@@ -101,22 +101,26 @@
 
   $$
   \begin{align}
-  p(x) &= E \left[ p(x \mid z) , z\sim p(z)\right] \\
-  p(x | z) &= \frac{p(z \mid x)p(x)}{p(z)}  \\
+  p(x) &= E_{ z\sim p(z \mid x) } \left[ p(z) \right] \tag{from above}\\
+  &=  \sum_i p(z_i \mid x_i) p(z_i) \tag{!?} \\
   \end{align}
   $$
 
+  Instead, we could calculate $p(x_i)$ as
   $$
   \begin{align}
-  p(x | z) &\approx \frac{q(z \mid x)p(x)}{p(z)}  \\
-  &\approx E \left[ p(z \mid x)p(x), x \sim D \right] \\
+  p(x_i) &= E_{ z\sim p(z) } \left[ p(x_i \mid z) \right]  \tag{likelihood of $x_i$ under our prior}\\
   \end{align}
   $$
+  (doesnt seem to work either. maybe you just need more samples.)
+  This is pretty much just a parzen window!?!?
 
+  Maybe this would work with a richer output distribution, rather than just a univariate gaussian?
+  (intuition) problem is that even just adding a single pixel of noise might bring $p(x_i | z)$ down to zero.
 
   <h3>RIMs</h3>
 
-  The code for RIMs exists in [src](src), but it will take some more effort to reproduce the papers results.
+  The code for RIMs exists in <a href=https://github.com/act65/mri-reconstruction/tree/master/src>src</a>, but it will take some more effort to reproduce the papers results.
 
   <h2>Future</h2>
 
@@ -124,7 +128,7 @@
   Could learn a sparse representation of the data
    $ \mathop{\text{argmin}}_{\theta} \parallel d(e(x)) - x \parallel_2 + \parallel e(x) \parallel_1 $ and use this to regularise reconstructions to plausible images.
 
-  Candidate reconstructions that are not sparse in this representation will be pushed in that direction. 
+  Candidate reconstructions that are not sparse in this representation will be pushed in that direction.
 
 </div>
 </body>

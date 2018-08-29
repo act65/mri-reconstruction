@@ -33,7 +33,7 @@
   <img src="assets/generative_modelling_challenges.png">
 
 
-  <h3>Parzen windows</h3>
+  <h2>Parzen windows</h2>
 
   Given the tip above, I had a play with parzen windows to see how well they can be used to turn a VAE into a density estimate.
 
@@ -72,8 +72,6 @@
 
   Quick wins: Could try playing with <a href=https://en.wikipedia.org/wiki/Gaussian_process>Gaussian processes</a>
    or <a href=https://arxiv.org/abs/1807.01622>Neural processes</a>.
-
-  Or look into information geometry to ...?
 
 
   <h2> Maximum likelihood</h2>
@@ -134,23 +132,50 @@
 
   <h2>Normalising flows</h2>
 
-  What if instead we could start with a simple distribution and transform it into an arnitrary distribution?
-
-  Effectively just pushing around probability mass.
-  So how can we keep tr
+  It turns out there is already a vast literature using this exact idea.
+  The main idea can be summarised as: What if instead we could start with
+  a simple distribution and transform it into an arnitrary distribution?
 
   $$
   p(f(x)) = \frac{1}{det(J(f))}p(x) \\
   $$
 
-  But want to decompse the prior.
-  Masked autoregressive.
+  Using the equation above, we can keep track of how probability density has been
+  stretched or contracted.
 
-  Problems.
-  <ol>
-    <li> Too much non linearity makes ...</li>
-    <li> Must be ivertible!?</li>
-  </ol>
+  However, there is a problem. The bijectors (such as $f$ in this case) must be
+  invertible.
+  This means; to generate a (say) 784 dim image, we need to start with a simple
+  distribution also in 784 dims.
+  This doesnt seem ideal, we really want to assume a small number of latent variables
+  generate the high dimensional data.
+  Some recent work (</a href=https://arxiv.org/abs/1705.07057>Masked autoregressive flows</a>)
+  attempts to decompose the computation of $p(x)$ into a sequence.
+
+  <h2>Future work</h2>
+
+  <h3>Downhill regularisation</h3>
+
+  Another (random) idea I entertained was 'downhill regularisation'.
+  The problem highlighted about is that it is expensive to regularise NNs to be normalised.
+  We dont care about the absolute magnitude of the outputs, only that large
+  amounts of probability density are not allocated to points we havent seen.
+  So it may be possible to regularise for this?
+
+  $$
+  \text{down}(f, x_i) = \sum_j f_{\theta}(x_i + \epsilon_j) - f_{\theta}(x_i) \\
+  \mathcal L = -f_{\theta}(x_i) + \lambda \cdot \text{down}(f, x_i) \\
+  $$
+
+  Maximise the (log) probability of each $x_i$, but try to make each datapoint the locally highest point.
+  All directions point downward.
+
+  I spend a couple of hours training models, but got no interesting results.
+  Although I might want to come back to it.
+
+  <h3>Heirarchical flows</h3>
+
+
 
 </div>
 </body>

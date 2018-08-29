@@ -24,7 +24,7 @@ def main(args):
     from tensorflow.examples.tutorials.mnist import input_data
     mnist = input_data.read_data_sets("/tmp/MNIST_data/", one_hot=True)
 
-    with tf.variable_scope('s'):
+    with tf.variable_scope('infovae'):
         nn = infovae.InfoVAE(args.n_hidden, args.width, args.depth)
 
         x = tf.placeholder(shape=[None, 32, 32, 1], dtype=tf.float32)
@@ -67,11 +67,6 @@ def main(args):
 
     global_step = tf.train.get_or_create_global_step()
     learning_rate = args.learning_rate
-    # learning_rate = tf.train.exponential_decay(
-    #                     args.learning_rate,
-    #                     global_step,
-    #                     500,
-    #                     0.5)
 
     opt = tf.train.AdamOptimizer(learning_rate)
     gnvs = opt.compute_gradients(loss)

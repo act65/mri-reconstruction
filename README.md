@@ -1,10 +1,11 @@
 # mri-reconstruction
 
 This repo contains my notes and code while exploring how to use learned priors for compressed sensing.
+The work was done in collaboration (I was working as a research assistant) with Paul Teal.
 
 ## Docs
 
-I have written a couple of documents detailing my thoughts on;
+I have written a couple of documents detailing my work and thoughts on;
 
 - [learned priors for comressed sensing](https://act65.github.io/mri-reconstruction/learned-prior)
 - [density estimation](https://act65.github.io/mri-reconstruction/density)
@@ -12,26 +13,22 @@ I have written a couple of documents detailing my thoughts on;
 
 ## Code
 
-To run the scripts you will need to
+To install you will need to run
 
 ```
-pip install tensorflow
+git clone https://github.com/act65/mri-reconstruction.git
 cd mri-reconstruction
 python setup.py install
-
-python scripts/{script_name} --args
 ```
-For example;
+You should then be able to run the scripts (to train new models). For example;
 ```
 python scripts/train_infovae.py --logdir={path} \\
 --n_hidden=4 --width=64 --epochs=100 --beta=1.0 \\
 --learning_rate=0.0001 --batch_size=8
 ```
 
-
-To run the notebooks you will need to
+And to run the notebooks;
 ```
-pip install jupyterlab
 jupyter lab
 ```
 and then navigate to [http://localhost:8888/lab](http://localhost:8888/lab).
