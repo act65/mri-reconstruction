@@ -23,92 +23,47 @@
    <div>
   <h1>Density estimation</h1>
 
-  Why is density estimation hard?
-  In high dimensions are the many directions and a large amount of volume.
+  <p><b>Question:</b> Why is density estimation hard? <i>I am not sure. The curse of dimensionality will play a role.</i></p>
 
-
-  In the previous section we considered VAEs and GANs for pseudo-density estimation.
-  The deeper problem to the learned prior approach seems to be that we dont have have any good models of density...
-
-  <img src="assets/generative_modelling_challenges.png">
-
-
-  <h2>Parzen windows</h2>
-
-  Given the tip above, I had a play with parzen windows to see how well they can be used to turn a VAE into a density estimate.
-
-  $$
-  p(x) = \frac{1}{n}\sum_i^n k(x, \hat x_i)
-  $$
-
-  So, I used the hidden space of a VAE as the inputs to a parzen window (hoping the the latent space would give greater generalisation as it is lower dimensional).
-
-  <img src="assets/latent_space.png">
-
-  So using the equation above we can estimate the probability of data.
-  $$
-  p(x) = \frac{1}{n}\sum_{i=0}^n k(f(x), f(\hat x_i))
-  $$
-
-  <img src="assets/parzen_high_temp.png">
-
-  Cool, we seem to have a nice structured estimate of P(x), with gradient pointing in meaningful directions.
-
-  But, using this parzen window we seem to get equal estiamtes of P(x) for images from MNIST and for generated (white noise) images.
-
-  <img src="assets/p_parzen_fake_real.png">
-
-  Ok, the problem is that the kernels are too wide and are allocating probability to locations further away from the data. Solution, reduce the width of the kernels.
-
-  <img src="assets/parzen_low_temp.png">
-  <img src="assets/p_parzen_separated.png">
-
-  The problem is now that the gradients don't point in any meaningful directions. They will simply lead you to the nearest data point.
-
-  <i>Maybe there is an optimal tuning of the width to give desired results.
-    But I didnt spend much time exploring this.</i>
-
-  <h3>Future directions</h3>
-
-  Quick wins: Could try playing with <a href=https://en.wikipedia.org/wiki/Gaussian_process>Gaussian processes</a>
-   or <a href=https://arxiv.org/abs/1807.01622>Neural processes</a>.
-
+  In the previous section we considered VAEs and GANs for density approximation.
+  The deeper problem to the learned prior approach seems to be that we dont have have any methods
+  for efficiently and accurately approximating a density.
 
   <h2> Maximum likelihood</h2>
 
-  In an ideal world we would like the ability to approximate arbitrary distributions. To learn $ f: X \to Y $ such that the probability density is preserved. An easy and intuitive way to learn a density model is by maximum likelihood estimation.
+  In an ideal world we would like the ability to approximate arbitrary distributions.
+  To learn $ f: X \to Y $ such that the probability density is preserved.
+  An easy and intuitive way to learn a density model is by maximum likelihood estimation.
 
   $$
   \begin{align}
-  \hat \theta &= \mathop{\text{argmax}}_{\theta} E \left[ p(x, \theta), x\sim D \right] \\
+  \hat \theta &= \mathop{\text{argmax}}_{\theta} E_{x\sim D} \left[ p(x, \theta) \right] \\
   \end{align}
   $$
 
-  Thus, models that allocates higher probability to observed $ x $s are better.
+  <p>Thus, models that allocate higher probability to observed data, the $ x $s, are better.
   However, the class of functions that $\theta$ can represent is limited.
   We would like to use an abitrary functon approximator like neural networks,
-  but they fail at ML because they can simply predict $ nn(x_i) = \infty $
-  for all inputs. They can do this because they are not normalised.
+  but they fail at maximum likelihood because they can simply predict $nn(x_i) = \infty $
+  for all inputs. They can do this because they are not normalised.</p>
 
-  A simple representation like a tensor that is indexed by possible $x $s has a
+  <p>A simple representation like a tensor that is indexed by possible $x_i$s has a
   similar normalisation problem (naively optimising it to do ML will give $ \infty $).
-  But, it can be easily constrained/regualised to give normalised results.
+  But, it can be easily constrained/regualised to give normalised results.</p>
 
   $$
-  p(x) = T[x] \\
+  \begin{align}
+  p(x) &= T[x] \\
+  \hat T &= \mathop{\text{argmax}}_{T} \mathbb E_{x\sim D} \left[ p(x)\right] \text{s.t.} \sum_i T_i = 1
+  \end{align}
   $$
 
-  $$
-  \hat T = \mathop{\text{argmax}}_{T} \mathbb E \left[ p(x), x\sim D\right] \text{s.t.} \sum_i T_i = 1
-  $$
-
-  Which might be implemented as simply the decay of each element towards zero probabilty.
-  But, just for mnist $T$ would need have $(28 \times 28)^{256}$ elements for each possible image (which according to Google's calculator is infinity...).
-
+  <p>Which might be implemented as simply the decay of each element towards zero probabilty.
+  But, just for mnist $T$ would need have $(28 \times 28)^{256}$ elements for
+  each possible image (which according to Google's calculator is infinity...).</p>
 
   In principle this idea could be applied to neural networks as well.
-
-  So, if we increase the probability of a location, that should decrease the probability of other locations.
+  If we increase the probability of a location, it should decrease the probability of other locations.
 
   $$
   \begin{align}
@@ -116,25 +71,20 @@
   \end{align}
   $$
 
-  Empirical estimates of $f$ when it is a NN. Hmm, not sure how to do that...
+  <p>So, how can we efficienty estimate of $\int f(x, \theta) d$ when it is $f$ is a NN.
+  What we want is a parameterised fn that is easily integrated. How about $e^{x}$.
+  Or one that can be decomposed and into simpler parts and integrated analytically.</p>
 
-  Want to find a parameterised fn that is easily integrated. Oh, how about $e^{x}$...
-
-  $$
-  \begin{align}
-  f(x) &= g_n( \dots g_1(g_0(x))) \\
-  \int f(x) dx &= ?? \\
-  \end{align}
-  $$
-
-  Want some sort of decomposition of the integral into something nicer.
-  Want an analytical way to calculate it!?
+  <p>Alternatively, the point of the normalisation is to ensure large amounts of probability mass
+  are not allocated to unseen data. We could simply take random image samples and train them
+  to have low probability.</p>
 
   <h2>Normalising flows</h2>
 
-  It turns out there is already a vast literature using this exact idea.
+  It turns out there is already a vast literature exploring the idea of flexible
+  representations for densities.
   The main idea can be summarised as: What if instead we could start with
-  a simple distribution and transform it into an arnitrary distribution?
+  a simple distribution and transform it into an arbitrary distribution?
 
   $$
   p(f(x)) = \frac{1}{det(J(f))}p(x) \\
@@ -143,14 +93,14 @@
   Using the equation above, we can keep track of how probability density has been
   stretched or contracted.
 
-  However, there is a problem. The bijectors (such as $f$ in this case) must be
+  <p>However, there is a problem. The bijectors (such as $f$ in this case) must be
   invertible.
   This means; to generate a (say) 784 dim image, we need to start with a simple
   distribution also in 784 dims.
   This doesnt seem ideal, we really want to assume a small number of latent variables
-  generate the high dimensional data.
-  Some recent work (</a href=https://arxiv.org/abs/1705.07057>Masked autoregressive flows</a>)
-  attempts to decompose the computation of $p(x)$ into a sequence.
+  generate the high dimensional data.</p>
+
+  For some recent work see (<a href=https://arxiv.org/abs/1705.07057>Masked autoregressive flows</a>).
 
   <h2>Future work</h2>
 
@@ -175,8 +125,26 @@
 
   <h3>Heirarchical flows</h3>
 
+  As hinted at above, the real goal of generative modeling is to learn a hierarchical model.
+  A small set of latent features, in low dimension, generate the high dimensional data we observe.
 
+  There are two main problem with attempting to construct a hierarchical flow;
 
+  <ol>
+    <li> transforms that reduce the dimensionality are not invertible.</li>
+    <li> the determinant of transforms that reduce (or expand) the demsnsionality is zero (or $\infty$).</li>
+  </ol>
+
+  But I think these two problems are solvable.
+
+  <p>(1) Because we assume the data is generated by latent features
+  we are really saying that the data lies on a low dimensional manfold in the higher dimensional space. Thus it
+  possible to have an invertible mapping from said manifold into the latent space.
+  To actually calculate the inverse we could simply learn an approximate inverse.</p>
+
+  <p>(2) There is a nice little cheat that allows you to calculate the determinant of a non
+    square transformation. $\det(A) = \sqrt{\det{A\cdot A^T}}$. This calculation matches the usual $\det{A}$ when $A$
+  is square an is defined when $A$ is not square! Nice.</p>
 </div>
 </body>
 </html>

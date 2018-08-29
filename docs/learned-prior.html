@@ -28,8 +28,8 @@
 
   $$
   \begin{align}
-  \mathop{\text{argmin}}_x &  \;\; \text{prior}(x) \text{  s.t.  } \parallel \psi(x) - y \parallel_2 \\
-  \mathop{\text{argmin}}_x &  \text{prior}(x) \lambda \cdot \parallel \psi(x) - y \parallel_2  \tag{lagrange multiplier}  \\
+  \mathop{\text{argmin}}_x &  \;\; \text{prior}(x) \text{  s.t.  } \parallel f(x) - y \parallel_2 \\
+  \mathop{\text{argmin}}_x &  \;\; \text{prior}(x) + \lambda \cdot \parallel f(x) - y \parallel_2  \tag{lagrange multiplier}  \\
   \end{align}
   $$
 
@@ -54,7 +54,7 @@
   <i>At initialisation, the gradients don't point anywhere useful and
     the generator has been initialised spanning one of the modes.</i>
 
-  <p>Unless the mode collapse problem can be reliably solved (with guarantees),
+  <p>Unless the mode collapse problem can be reliably solved,
   GANs do not seem like a good idea. Note: there is a large amount of existing
   prior work here, see <a href=https://github.com/act65/mri-reconstruction/blob/master/reading.md>reading.md</a>.</p>
 
@@ -64,7 +64,8 @@
 
   <img src="assets/gen.png">
 
-  Then, to get an estimate of  $P(x)$ I sampled from the posterior and used the prior to estimate its probability.
+  Then, to get an estimate of  $P(x)$ I sampled from the posterior and used the
+  prior to estimate the probability of those samples.
   $$
   \begin{align}
   h_i &= f(x_i) \tag{encode $x_i$} \\
@@ -89,7 +90,7 @@
   \end{align}
   $$
 
-  So using this estimate of $ P(x) $ we can follow its density estimate
+  So using this estimate of $P(x) $ we can follow its density estimate
   towards more likely images. Thus filling is any missing information in an
   reconstruction. Let explore how it behaves.
 
@@ -120,7 +121,7 @@
 
   <i>Images generated every 100 steps (left to right, top to bottom).</i>
 
-  <p>In hindsight I am unsure this makes sense. As $f(x)$ is supposed to give
+  <p>In hindsight I am unsure the calculation of $p(x)$ makes sense. $f(x)$ is supposed to give
     an approximation to the posterior distribution, $q(z | x)$</p>
 
   $$
@@ -144,15 +145,59 @@
   Maybe this would work with a richer output distribution, rather than just a univariate gaussian?
   (intuition) problem is that even just adding a single pixel of noise might bring $p(x_i | z)$ down to zero.
 
-  <h3>RIMs</h3>
 
-  The code for RIMs exists in <a href=https://github.com/act65/mri-reconstruction/tree/master/src>src</a>, but it will take some more effort to reproduce the papers results.
 
-  <h2>Future</h2>
+  <h2>Parzen windows</h2>
 
-  There is no reason $\phi(x)$ must be explicitly representing a density.
+  Approximating a density function is a common goal of generative modeling. But there are some subtelties.
+  <img src="assets/generative_modelling_challenges.png">
+
+  Given the tip above, I had a play with parzen windows to see how well they
+  can be used to turn a VAE into a density estimate. A parzen window can be defined as;
+
+  $$
+  p(x) = \frac{1}{n}\sum_i^n k(x, \hat x_i)
+  $$
+
+  So, I used the hidden space of a VAE as the inputs to a parzen window (hoping
+  the the latent space would give greater generalisation).
+
+  <img src="assets/latent_space.png">
+
+  So using the equation above we can estimate the probability of data.
+  $$
+  p(x) = \frac{1}{n}\sum_{i=0}^n k(f(x), f(\hat x_i))
+  $$
+
+  <img src="assets/parzen_high_temp.png">
+
+  Cool, we seem to have a nice structured estimate of P(x), with gradient pointing in meaningful directions.
+
+  But, using this parzen window we seem to get equal estiamtes of P(x) for images from MNIST and for generated (white noise) images.
+
+  <img src="assets/p_parzen_fake_real.png">
+
+  Ok, the problem is that the kernels are too wide and are allocating probability to locations further away from the data. Solution, reduce the width of the kernels.
+
+  <img src="assets/parzen_low_temp.png">
+  <img src="assets/p_parzen_separated.png">
+
+  The problem is now that the gradients don't point in any meaningful directions. They will simply lead you to the nearest data point.
+
+  <p><i>Maybe there is an optimal tuning of the width to give desired results.
+    But I didnt spend much time exploring this.</i></p>
+
+  <h3>Future directions</h3>
+
+  <p>Quick wins: Could try playing with <a href=https://en.wikipedia.org/wiki/Gaussian_process>Gaussian processes</a>
+   or <a href=https://arxiv.org/abs/1807.01622>Neural processes</a>.</p>
+
+  <p>The code for RIMs exists in <a href=https://github.com/act65/mri-reconstruction/tree/master/src>src</a>,
+    but it will take some more effort to reproduce the papers results.</p>
+
+  <p>There is no reason $\phi(x)$ must be explicitly representing a density.
   Rather, we could learn a sparse representation of the data and use this to
-  regularise reconstructions to plausible images.
+  regularise reconstructions to plausible images.</p>
 </div>
 </body>
 </html>
