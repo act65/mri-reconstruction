@@ -1,7 +1,7 @@
 # mri-reconstruction
 
 This repo contains my notes and code while exploring how to use learned priors for compressed sensing.
-The work was done in collaboration (I was working as a research assistant) with Paul Teal.
+The work was done in collaboration with Paul Teal (while I was working as a part-time research assistant).
 
 ## Docs
 
