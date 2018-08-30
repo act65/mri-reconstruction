@@ -114,6 +114,35 @@ def input_fn(batch_size):
     # Return the dataset.
     return dataset
 
+def jacobian(y, x):
+    """
+    Code adapted from https://github.com/tensorflow/tensorflow/issues/675#issuecomment-319891923
+
+    Args:
+        y: A 2d tf.tensor [batch, n_outputs]
+        x: A 2d tf.tensor [batch, n_inputs]
+
+    Returns:
+        [batch, n_outputs, n_inputs]
+    """
+    y_flat = tf.reshape(y, [-1])
+    n = y_flat.get_shape()[0]
+
+    loop_vars = [
+        tf.constant(0, tf.int32),
+        tf.TensorArray(tf.float32, size=n),
+    ]
+    print(loop_vars)
+    _, jacobian = tf.while_loop(
+        lambda j, _: j < n,
+        lambda j, result: (j+1, result.write(j, tf.gradients(y_flat[j], x))),
+        loop_vars)
+
+    jacobian = jacobian.stack()
+
+    dydx = tf.reshape(jacobian, y.shape.concatenate(x.shape))
+    return tf.reduce_sum(dydx, axis=[2])
+
 if __name__ == '__main__':
     t = tf.random_normal(shape=(10, 32, 32, 1))
     y = tf.random_normal(shape=(10, 32, 32, 1))
