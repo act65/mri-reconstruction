@@ -12,7 +12,7 @@ tfd = tfp.distributions
 flags.DEFINE_float(
     "learning_rate", default=0.001, help="Initial learning rate.")
 flags.DEFINE_integer(
-    "epochs", default=50, help="Number of training steps to run.")
+    "epochs", default=100, help="Number of training steps to run.")
 flags.DEFINE_string(
     "activation",
     default="selu",
@@ -38,7 +38,7 @@ flags.DEFINE_bool(
 
 FLAGS = flags.FLAGS
 
-def non_square_det(x):
+def non_square_det(x, reltol=1e-6):
     """
     Idea taken from https://www.quora.com/How-do-we-calculate-the-determinant-of-a-non-square-matrix
 
@@ -56,20 +56,27 @@ def non_square_det(x):
     # return tf.sqrt(tf.linalg.det(squared_mat))
 
     s = tf.svd(x, compute_uv=False)
+
+    # atol = tf.reduce_max(s) * reltol
+    # s = tf.diag(tf.where(tf.greater(atol, tf.abs(s)), tf.ones_like(s), s))
+
     return tf.reduce_prod(s)
 
 def pinv(A, reltol=1e-6):
-  # Compute the SVD of the input matrix A
-  s, u, v = tf.svd(A)
+    """
+    Args:
+        A (tf.tensor): the matrix to be inverted shape=[n, m]
 
-  # Invert s, clear entries lower than reltol*s[0].
-  atol = tf.reduce_max(s) * reltol
-  s = tf.boolean_mask(s, s > atol)
+    Returns:
+        inverse (tf.tensor): the invserse of A, s.t. A_T.A = I. shape=[m,n]
+    """
+    s, u, v = tf.svd(A)
 
-  s_inv = tf.diag(1. / s)
+    atol = tf.reduce_max(s) * reltol
+    s_inv = tf.diag(tf.where(tf.greater(tf.abs(s), atol), 1.0/s, tf.zeros_like(s)))
+    # s_inv = tf.diag(1./s)
 
-  # Compute v * s_inv * u_t  from the left to avoid forming large intermediate matrices.
-  return tf.matmul(v, tf.matmul(s_inv, u, transpose_b=True))
+    return tf.matmul(v, tf.matmul(s_inv, u, transpose_b=True))
 
 class Dense(tfb.Bijector):
     """
@@ -94,10 +101,14 @@ class Dense(tfb.Bijector):
         with tf.variable_scope('dense'+name):
             self.weights = tf.get_variable(name='weights',
                                            shape=[n_inputs, n_outputs],
-                                           dtype=tf.float32)
+                                           dtype=tf.float32,
+                                           # initializer=tf.initializers.orthogonal()
+                                           )
             self.bias = tf.get_variable(name='bias',
                                         shape=[n_outputs],
-                                        dtype=tf.float32)
+                                        dtype=tf.float32,
+                                        initializer=tf.initializers.zeros()
+                                        )
 
     @property
     def _is_injective(self):
@@ -121,7 +132,6 @@ class Dense(tfb.Bijector):
 
     def _inverse_log_det_jacobian(self, y):
         return tf.log(non_square_det(pinv(self.weights)))
-        # return -self._forward_log_det_jacobian(self._inverse(y))
 
 def model_fn(features, labels, mode, params, config):
     """
@@ -140,31 +150,47 @@ def model_fn(features, labels, mode, params, config):
     global_step = tf.train.get_or_create_global_step()
     with tf.contrib.summary.record_summaries_every_n_global_steps(10, global_step=global_step):
 
-        n_hidden = 128
+        # construct a multilayer parameterised bijector
+        n_hidden = 8
         width = 32
+        # fn = Dense(n_hidden, 784)
 
-        # BUG there is a bug in Chain that doesnt allow this to work...
-        # fn = tfb.Chain([Dense(n_hidden, width, name='0'), Dense(width, width, name='1'), Dense(width, 784, name='2')])
+        fn = tfb.Chain([
+            Dense(width, 784, name='3'),
+            # tfb.Softplus(),
+            # Dense(width, width, name='2'),
+            Dense(width, width, name='1'),
+            Dense(n_hidden, width, name='0')
+        ])
 
-        # construct a parameterised density model
-        fn = Dense(n_hidden, 784)
+        # use the bijector to map a simple distribution into our a density model
         dist = tfd.MultivariateNormalDiag(loc=tf.zeros([n_hidden]),
                                           scale_diag=tf.ones([n_hidden]))
         density = tfd.TransformedDistribution(distribution=dist, bijector=fn)
 
         # maximise the likelihood of the data
         p = density.prob(x)
-        loss = tf.reduce_mean(1-p)
+        loss = tf.reduce_mean(1-p) # + 0.1*density.entropy()
+        # loss = -density.entropy()
 
         # generate some samples to visualise
         # HACK to get samples to work I had to comment out line 411 of transformed_distribution.py
         samples = density.sample(3)
         tf.summary.image('samples', tf.reshape(samples, [3, 28, 28, 1]))
 
+        # mu = density.mean()
+        # tf.summary.image('mean', tf.reshape(mu, [1, 28, 28, 1]))
+
         opt = tf.train.AdamOptimizer()
-        gnvs = opt.compute_gradients(loss, var_list=[fn.weights, fn.bias])
-        gnvs = [(tf.clip_by_norm(g, 1.0), v) for g, v in gnvs]
+        gnvs = opt.compute_gradients(loss)
+        gnvs = [(tf.clip_by_norm(g, 1.0) if g is not None else tf.zeros_like(v), v) for g, v in gnvs]
         train_step = opt.apply_gradients(gnvs, global_step=global_step)
+
+        """
+        Problems:
+        - low probabilty assigned to images at init (how can we init/regularise for uniform dist?)
+        - adding non linearities
+        """
 
     return tf.estimator.EstimatorSpec(
       mode=mode,
