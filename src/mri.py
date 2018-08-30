@@ -51,7 +51,7 @@ class MRI():
         return y
 
     def dLdx(self, y, x, sigma=1.0):
-        # TODO derivation and validation
+        # TODO derive and validate
         """
         Args:
             x (tf.tensor): The input image

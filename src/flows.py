@@ -82,6 +82,9 @@ class Dense(tfb.Bijector):
     """
     Want a hierarchical flow.
     Map some low dim distribution to a manifold in a higher dimensional space.
+
+    For more info on bijectors see tfb.Bijector, I simply cloned the general
+    structure.
     """
     def __init__(self, n_inputs, n_outputs, validate_args=False, name=''):
         """
@@ -133,6 +136,37 @@ class Dense(tfb.Bijector):
     def _inverse_log_det_jacobian(self, y):
         return tf.log(non_square_det(pinv(self.weights)))
 
+def make_mixture(latent_size, mixture_components):
+  """Creates a mixture of Gaussians distribution.
+
+  Args:
+    latent_size: The dimensionality of the latent representation.
+    mixture_components: Number of elements of the mixture.
+
+  Returns:
+    random_prior: A `tf.distributions.Distribution` instance
+      representing the distribution over encodings in the absence of any
+      evidence.
+  """
+  if mixture_components == 1:
+    # See the module docstring for why we don't learn the parameters here.
+    return tfd.MultivariateNormalDiag(
+        loc=tf.zeros([latent_size]),
+        scale_identity_multiplier=1.0)
+
+  loc = tf.get_variable(name="loc", shape=[mixture_components, latent_size])
+  raw_scale_diag = tf.get_variable(
+      name="raw_scale_diag", shape=[mixture_components, latent_size])
+  mixture_logits = tf.get_variable(
+      name="mixture_logits", shape=[mixture_components])
+
+  return tfd.MixtureSameFamily(
+      components_distribution=tfd.MultivariateNormalDiag(
+          loc=loc,
+          scale_diag=tf.nn.softplus(raw_scale_diag)),
+      mixture_distribution=tfd.Categorical(logits=mixture_logits),
+      name="prior")
+
 def model_fn(features, labels, mode, params, config):
     """
     Builds the model function for use in an estimator.
@@ -148,30 +182,38 @@ def model_fn(features, labels, mode, params, config):
     x = features['x']
 
     global_step = tf.train.get_or_create_global_step()
-    with tf.contrib.summary.record_summaries_every_n_global_steps(10, global_step=global_step):
+    with tf.contrib.summary.record_summaries_every_n_global_steps(100, global_step=global_step):
 
         # construct a multilayer parameterised bijector
         n_hidden = 8
         width = 32
-        # fn = Dense(n_hidden, 784)
+        n_outputs = 784
 
         fn = tfb.Chain([
-            Dense(width, 784, name='3'),
+            Dense(width, n_outputs, name='3'),
             # tfb.Softplus(),
             # Dense(width, width, name='2'),
-            Dense(width, width, name='1'),
+            # tfb.Softplus(),
+            # Dense(width, width, name='1'),
             Dense(n_hidden, width, name='0')
         ])
 
         # use the bijector to map a simple distribution into our a density model
-        dist = tfd.MultivariateNormalDiag(loc=tf.zeros([n_hidden]),
-                                          scale_diag=tf.ones([n_hidden]))
+        dist = make_mixture(n_hidden, 10)
+
+        # logits = tf.get_variable(
+        #     name="logits", shape=[n_outputs])
+        # dist = tfd.RelaxedOneHotCategorical(logits=logits, temperature=1.0)
+        # density = tfd.RelaxedBernoulli(logits=logits, temperature=100.0)
+
+
         density = tfd.TransformedDistribution(distribution=dist, bijector=fn)
 
         # maximise the likelihood of the data
         p = density.prob(x)
-        loss = tf.reduce_mean(1-p) # + 0.1*density.entropy()
-        # loss = -density.entropy()
+        loss = tf.reduce_mean(1-p) # - 0.1*density.entropy()
+        # reg = -density.entropy()
+        # tf.summary.scalar('entropy', reg)
 
         # generate some samples to visualise
         # HACK to get samples to work I had to comment out line 411 of transformed_distribution.py
@@ -181,16 +223,10 @@ def model_fn(features, labels, mode, params, config):
         # mu = density.mean()
         # tf.summary.image('mean', tf.reshape(mu, [1, 28, 28, 1]))
 
-        opt = tf.train.AdamOptimizer()
+        opt = tf.train.AdamOptimizer(0.0001)
         gnvs = opt.compute_gradients(loss)
-        gnvs = [(tf.clip_by_norm(g, 1.0) if g is not None else tf.zeros_like(v), v) for g, v in gnvs]
+        gnvs = [(tf.clip_by_norm(g, 10.0) if g is not None else tf.zeros_like(v), v) for g, v in gnvs]
         train_step = opt.apply_gradients(gnvs, global_step=global_step)
-
-        """
-        Problems:
-        - low probabilty assigned to images at init (how can we init/regularise for uniform dist?)
-        - adding non linearities
-        """
 
     return tf.estimator.EstimatorSpec(
       mode=mode,
